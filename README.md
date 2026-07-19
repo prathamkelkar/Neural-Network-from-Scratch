@@ -1,4 +1,4 @@
-# Neural Network from Scratch
+# Building a Neural Network from Scratch
 
 A fully-connected (dense) neural network implemented from scratch in NumPy/CuPy - no TensorFlow, no PyTorch - trained and evaluated on the ATLAS Higgs Boson Challenge dataset to classify particle collision events as Higgs boson signal or background noise.
 
