@@ -5,6 +5,7 @@
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{url}
+\usepackage[breaklinks=true]{hyperref}
 % Custom styling for Python code
 \lstset{
     language=Python,
@@ -41,7 +42,7 @@ Neural networks form the backbone of many technical applications we use today fr
 I have always been fascinated by how they work under the hood. Before this project, I knew that neural networks take in an input and perform some sort of multi-variable regression or classification on the input to provide an output. Although I understood the underlying mechanism that they work on, I did not know the rigorous mathematical concepts that they operate on and how one is actually implemented without the help of frameworks like TensorFlow and PyTorch. 
 \\
 \\
-Previously, I have experimented with these frameworks and created accurate models by piling on dense and dropout layers, but I never understood the underlying concepts or the implementation details. This is what I aim to develop through this project, hoping that it will leave me in a better position to create and optimize models in the future.
+Previously, I have experimented with these frameworks and created models by piling on dense layers and using various activation functions, but I never understood the underlying concepts or the implementation details. This is what I aim to develop through this project, hoping that it will leave me in a better position to create and optimize models in the future.
 \\
 \\
 For this project, I will be using the ATLAS Higgs Boson Challenge dataset, originally released by CERN and hosted through a Kaggle competition (``Higgs Boson Machine Learning Challenge''), to train and test my models. This makes it a good fit for training and testing, since it has $250,000$ rows of data spanning $30$ features, along with the fact that it has been widely used and benchmarked before, giving me a good point of reference to compare my own results against.
@@ -102,7 +103,7 @@ Now that the cost function $J(\mathbf{w}, b)$ is defined, it needs to be minimiz
     \mathbf{w} := \mathbf{w} - \alpha \frac{\partial J(\mathbf{w}, b)}{\partial \mathbf{w}} = \mathbf{w} - \alpha \cdot \nabla_\mathbf{w}J(\mathbf{w}, b)
 \end{equation}
 \begin{equation}
-    b:=b-\alpha \frac{\partial J(\mathbf{w}, b)}{\partial b}
+    b:=b-\alpha \frac{\partial J(\mathbf{w}, b)}{\partial b}=b-\alpha \nabla_{b}J(\mathbf{w},b)
 \end{equation}
 \subsubsection{Learning Rate}
 The parameter $\alpha$ appearing in equations $(5)$ and $(6)$ is called the ``learning rate''. The gradient only tells us the direction in which the cost $J$ increases most steeply, so moving in the opposite direction decreases it; $\alpha$ is what controls how large a step is taken in that direction on each iteration.
@@ -317,7 +318,9 @@ We can also infer that:
 $$\frac{\partial \mathbf{A}^{[1]}}{\partial \mathbf{Z}^{[1]}}=g^{[1]'}(\mathbf{Z^{[1]})}$$
 Substituting this in equation $(28)$,
 $$d\mathbf{Z}^{[1]} = \frac{\partial J}{\partial \mathbf{A}^{[1]}} \odot \frac{\partial \mathbf{A}^{[1]}}{\partial \mathbf{Z}^{[1]}} = \mathbf{W}^{[2]T} d\mathbf{Z}^{[2]} \odot g^{[1]\prime}(\mathbf{Z}^{[1]})$$
-This expression shows precisely why one factor is combined as a matrix product and the other as the elementwise product introduced in Section 3.4.1. The first factor, $d\mathbf{A}^{[1]} = \mathbf{W}^{[2]T} d\mathbf{Z}^{[2]}$, comes from the relation $\mathbf{Z}^{[2]} = \mathbf{W}^{[2]}\mathbf{A}^{[1]} + b^{[2]}$. Here each entry of $\mathbf{Z}^{[2]}$ is a weighted sum of every entry of $\mathbf{A}^{[1]}$, so the derivative of $\mathbf{Z}^{[2]}$ with respect to $\mathbf{A}^{[1]}$ has non-zero cross terms, and the chain rule at this step is a full matrix product. The second factor comes from $\mathbf{A}^{[1]} = g^{[1]}(\mathbf{Z}^{[1]})$, where the ReLU acts on each entry of $\mathbf{Z}^{[1]}$ separately. By exactly the argument of Section 3.4.1, its cross derivatives are zero, so this step reduces to the elementwise product with the derivative $g^{[1]\prime}(\mathbf{Z}^{[1]})$. In short, the weight matrix connects every input to every output and therefore requires a matrix product, whereas the activation connects each entry only to itself and therefore requires an elementwise product. For the ReLU, that derivative equals $1$ wherever the corresponding entry of $\mathbf{Z}^{[1]}$ was positive and $0$ otherwise, so the elementwise product keeps the gradient for the units that were active on the forward pass and removes it for the rest. Unlike the output layer, where the sigmoid and the cross-entropy loss cancelled to leave the clean $\mathbf{A}^{[2]} - \mathbf{Y}$, no such cancellation occurs here, so the elementwise product stays in the final expression.
+This expression shows precisely why one factor is combined as a matrix product and the other as the elementwise product introduced in Section 3.4.1. The first factor, $d\mathbf{A}^{[1]} = \mathbf{W}^{[2]T} d\mathbf{Z}^{[2]}$, comes from the relation $\mathbf{Z}^{[2]} = \mathbf{W}^{[2]}\mathbf{A}^{[1]} + b^{[2]}$. Here each entry of $\mathbf{Z}^{[2]}$ is a weighted sum of every entry of $\mathbf{A}^{[1]}$, so the derivative of $\mathbf{Z}^{[2]}$ with respect to $\mathbf{A}^{[1]}$ has non-zero cross terms, and the chain rule at this step is a full matrix product. The second factor comes from $\mathbf{A}^{[1]} = g^{[1]}(\mathbf{Z}^{[1]})$, where the ReLU acts on each entry of $\mathbf{Z}^{[1]}$ separately. Using the argument in Section 3.4.1, its cross derivatives are zero, so this step reduces to the elementwise product with the derivative $g^{[1]\prime}(\mathbf{Z}^{[1]})$. In short, the weight matrix connects every input to every output and therefore requires a matrix product, whereas the activation connects each entry only to itself and therefore requires an elementwise product. 
+\\\\
+For the ReLU, that derivative equals $1$ wherever the corresponding entry of $\mathbf{Z}^{[1]}$ was positive and $0$ otherwise, so the elementwise product keeps the gradient for the units that were active on the forward pass and removes it for the rest. Unlike the output layer, where the sigmoid and the cross-entropy loss cancelled to leave the clean $\mathbf{A}^{[2]} - \mathbf{Y}$, no such cancellation occurs here, so the elementwise product stays in the final expression.
 \\
 Substituting this in equation $(29)$,
 \begin{equation}
@@ -399,7 +402,7 @@ At the LHC (Large Hadron Collider), protons are smashed together at extremely hi
 The split of signal events to background noise in the dataset is $\sim 0.657: 0.343$, i.e. always predicting "background" would yield an accuracy of $65.7\%$.
 
 \subsection{Pre-processing the Data}
-Before the data can be fed into any model, it first needs to be pre-processed to ensure that it is in the correct format for the required input. To do this, some features of the data, such as the "EventID" and "Weight", were removed from the data as they would not have had any impact while training. Additionally, the data was converted from a \verb|.csv| format to a \verb|NumPy| array to aid in computation. 
+Before the data can be fed into any model, it first needs to be pre-processed to ensure that it is in the correct format for the required input. To do this, some features of the data, such as the ``EventD'' and ``Weight'', were removed from the data as they would not have had any impact while training. The dataset did not contained some values of ``$-999$'', which were used to denote ``NA''. Therefore, those values were also filtered out during the preprocessing. Additionally, the data was converted from a \verb|.csv| format to a \verb|NumPy| array to aid in computation. 
 \\\\
 Further, the data was also normalized. This was done for a few reasons. Firstly, since different features are spread between different orders of magnitude, those that are large in raw value would dominate the $\mathbf{w}^T\mathbf{x} + b$ computation. Thus, the magnitude of the weight given to a feature would represent how it impacts the final outcome rather than how big or small the feature is. This also prevents saturation in activation functions, especially in the sigmoid activation, as extreme values would push the function to either $0$ or $1$, which has a very low rate of change, and there are greater chances for the weights to be "stuck" in such low-gradient areas.
 \\\\
@@ -408,6 +411,26 @@ An $80:20$ split $(200,000:50,000)$ was used to separate the $250,000$ rows of d
 \subsection{Initialization of Parameters}
 Since initializing the weight matrices to zero would essentially mean that every neuron in the layer would give an identical result, the values of the weight matrices of each layer were initialized to random values using the \verb|np.random.randn()| function and were scaled by a factor of $\sqrt{\frac{2}{l}}$, where $l$ is the number of neurons in the previous layer of the neural network. This is called the ``He'' initialization, introduced by Kaiming He and his colleagues in 2015 specifically to work with ReLU activations (He et al.). This type of scaling helps prevent vanishing or exploding gradients.
 
+\subsection{Code Structure}
+
+To implement my ideas for the neural networks in code, I identified a set of 4 major steps that have to be performed during every iteration:
+\begin{enumerate}
+    \item Forward propagation
+    \item Computing the cost for the iteration
+    \item Backward propagation
+    \item Updating parameters
+\end{enumerate}
+I created a set of 4 main functions to implement each of these steps: \verb|model_forward()|, \verb|compute_cost()|, \verb|model_backward()|, and \verb|update_parameters()|. Additionally, I created a function, \verb|run_model()|, to call all of the above functions cohesively for each iteration of training, along with a function, \verb|predict()|, to use the trained neural network to make predictions and check the accuracy on a given set.
+\\\\
+For both the forward and backward passes, I implemented a 3-tier function structure to compute them:
+\begin{itemize}
+    \item The bottom-most tier, \verb|linear_forward()| and \verb|linear_backward()|, computes the linear part of each pass, i.e. $\mathbf{Z}^{[l]} = \mathbf{W}^{[l]}\mathbf{A}^{[l-1]} + \mathbf{b}^{[l]}$ and its corresponding gradients, given the layer's parameters.
+    \item The second tier, \verb|linear_activation_forward()| and \verb|linear_activation_backward()|, wraps the bottom tier and additionally applies the correct activation function, since different activations require different methods to compute their forward and backward passes.
+    \item The top tier, \verb|model_forward()| and \verb|model_backward()|, calls the second tier layer by layer across the entire network, selecting the appropriate activation function (ReLU for hidden layers, sigmoid for the output layer) at each step.
+\end{itemize}
+Additionally, I defined several helper functions to compute the activation functions and their derivatives directly: \verb|sigmoid()|, \verb|relu()|, \verb|sigmoid_backward()|, and \verb|relu_backward()|.
+\\\\
+The whole codebase for the functions is available on my GitHub repository, as well as the appendix of this report. %link yet to be inserted.
 
 \subsection{Testing}
 \subsubsection{Logistic Regression on a Single Neuron}
@@ -422,22 +445,22 @@ $$\mathbf{A}^{[0]} \xrightarrow{} 20 \xrightarrow{} 10 \xrightarrow{} 7 \xrighta
 Initially, when I tried training it at a learning rate of $r=0.01$, I found the accuracy to be $\sim 78\%$ for both the training and the test sets. Then, looking at the cost curve, I realized that the model was far away from convergence. Thus, I decided to train the model on a number of learning rates:
 $$[0.01,\space 0.025, \space  0.075,\space 0.1,\space 0.2,\space 0.3,\space 0.4,\space 0.5,\space 0.6,\space 0.7\space]$$
 The cost curves of the models and their accuracies can be seen in the following figures.
-%insert cost curves and accuracies
+
 
 \begin{figure}[htbp]
-    \centering % Centers the image on the page
-    \includegraphics[width=0.9\textwidth]{output.png} % Adjust size and insert file
-    \caption{Cost curve for all the different learning rates tested} % Add a caption
-    \label{fig:cost_curve_lrs} % Add a unique label for cross-referencing
+    \centering 
+    \includegraphics[width=0.9\textwidth]{figures/output.png}
+    \caption{Cost curve for all the different learning rates tested} 
+    \label{fig:cost_curve_lrs} 
 \end{figure} 
 
 Figure 1 shows that a higher learning rate converges faster and generally at a lower cost for a fixed number of iterations. We do have to note that this cannot be generalized as once a learning rate gets too big, it can fail to find the optima as it could take steps that would be too big as well. When that is the case, the graph for cost would not show a smooth curve but one that has many spikes in between, and early signs of these spikings can be seen if one looks closely at the plot for $r=0.7$. 
 
 \begin{figure}[htbp]
-    \centering % Centers the image on the page
-    \includegraphics[width=0.9\textwidth]{full_gd_epochs.png} % Adjust size and insert file
-    \caption{Graph of the train and test accuracies for each learning rate} % Add a caption
-    \label{fig:cost_curve_lrs} % Add a unique label for cross-referencing
+    \centering 
+    \includegraphics[width=0.9\textwidth]{figures/full_gd_epochs.png} 
+    \caption{Graph of the train and test accuracies for each learning rate}
+    \label{fig:cost_curve_lrs} 
 \end{figure}
 
 Looking at Figure 2, the model with a learning rate of $r=0.6$ showed the highest training accuracy of $\sim 84.3\%$, along with a test accuracy of $\sim 83.9\%$. This echoes the findings from Figure 1, as we see that a higher learning rate has enabled the model to reach higher accuracy within a fixed number of iterations but the highest learning rate is not necessarily the best one to use. 
@@ -475,20 +498,20 @@ Oversized                  & 512, 256, 128, 64     & 5 & 188,417 \\
 As I started training these models on the best learning rate I had before $r=0.6$, I started getting \verb|nan| in the cost computation I was logging, which was a signal that the cost had exploded. Upon researching, I realized that models with mini-batching implemented had to be trained on far lower learning rates, and complex models needed to have more batches to prevent the cost from exploding. Thus, I chose to train my models at a learning rate of $r=0.01$, for $400$ epochs by dividing the data into batches of $1024$. The cost curves and accuracies of the models are shown in the following figures. An important point to note here is that I was not able to train my "oversized" model fully with this learning rate, as the cost exploded.
 
 \begin{figure}[htbp]
-    \centering % Centers the image on the page
-    \includegraphics[width=0.9\textwidth]{cost_with_epochs_architecture.png} % Adjust size and insert file
-    \caption{Cost curve for all the different model architectures tested} % Add a caption
-    \label{fig:cost_curve_lrs} % Add a unique label for cross-referencing
+    \centering 
+    \includegraphics[width=0.9\textwidth]{figures/cost_with_epochs_architecture.png}
+    \caption{Cost curve for all the different model architectures tested} 
+    \label{fig:cost_curve_lrs} 
 \end{figure}
 
 \begin{figure}[htbp]
-    \centering % Centers the image on the page
-    \includegraphics[width=0.9\textwidth]{final_acc_graph.png} % Adjust size and insert file
-    \caption{Train and test accuracies of the different model architectures tested} % Add a caption
-    \label{fig:cost_curve_lrs} % Add a unique label for cross-referencing
+    \centering 
+    \includegraphics[width=0.9\textwidth]{figures/final_acc_graph.png} 
+    \caption{Train and test accuracies of the different model architectures tested} 
+    \label{fig:cost_curve_lrs}
 \end{figure}
 
-Upon analyzing the graphs, one can notice that the best result was obtained from the "deep and wide" model, with $6$ layers and $14,977$ parameters, which yielded a training accuracy of $85.4\%$ but did not score too well in terms of the testing accuracy $(83.4\%)$. There is a clear observation I could make from this experiment. As the model architecture gets deeper and wider, the training accuracy continues to grow in minor increments, while the testing accuracy stays at a plateau. This is also evidenced by the cost curve of all of the models, especially the "oversized" one, which could reach to much lower costs while training before the cost exploded. Thus, it can be concluded that increasing the number of parameters has an effect on minimizing the cost more efficiently.
+Upon analyzing the graphs, one can notice that the best result was obtained from the ``deep and wide'' model, with $6$ layers and $14,977$ parameters, which yielded a training accuracy of $85.4\%$ but did not score too well in terms of the testing accuracy $(83.4\%)$. There is a clear observation I could make from this experiment. As the model architecture gets deeper and wider, the training accuracy continues to grow in minor increments, while the testing accuracy stays at a plateau. This is also evidenced by the cost curve of all of the models, especially the ``oversized'' one, which could reach to much lower costs while training before the cost exploded. Thus, it can be concluded that increasing the number of parameters has an effect on minimizing the cost more efficiently.
 
 \subsection{Evaluation}
 Since the dataset was used for the ATLAS Challenge competition, there have been many attempts at training different types of machine learning algorithms to try to achieve the best accuracy at prediction. I found a paper by S. Raza Ahmad which similarly implemented a deep neural network from scratch using NumPy for this same competition, achieving an accuracy of $83\%$ using a 4-hidden-layer network with 300 units per layer, sigmoid activations throughout, and layer-wise pretraining using stacked autoencoders, trained across a 12-node distributed cluster over 7-10 days (Ahmad). It is worth noting that this comparison is not perfectly like-for-like given the substantial differences in architecture, compute, and training methodology; nonetheless, my comparatively lightweight, single-model network achieved a marginally higher accuracy of $\sim 84\%$.
@@ -504,35 +527,574 @@ Deriving backpropagation by hand, from the single-neuron case in to the fully ve
 Going forward, I plan to apply this same from-scratch approach to convolutional neural networks, and learn about model assessment, evaluation, and regularization to build a full machine learning project.
 
 \clearpage
-\begin{center}
-Works Cited
-\end{center}
-
+\section{Works Cited}
 \noindent\hangindent=0.5in\hangafter=1
-Ahmad, S. Raza. ``Technical Report of Participation in Higgs Boson Machine Learning Challenge.'' \textit{arXiv}, 9 Oct. 2015, \url{arxiv.org/abs/1510.02674}.
+Ahmad, S. Raza. ``Technical Report of Participation in Higgs Boson Machine Learning Challenge.'' \textit{arXiv}, 9 Oct. 2015, \url{https://arxiv.org/abs/1510.02674}.
 \par\bigskip
-
 \noindent\hangindent=0.5in\hangafter=1
-CuPy Developers. ``CuPy: NumPy \& SciPy for GPU.'' \textit{CuPy}, \url{cupy.dev}.
+CuPy Developers. ``CuPy: NumPy \& SciPy for GPU.'' \textit{CuPy}, \url{https://cupy.dev}.
 \par\bigskip
-
 \noindent\hangindent=0.5in\hangafter=1
-He, Kaiming, et al. ``Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification.'' \textit{arXiv}, 6 Feb. 2015, \url{arxiv.org/abs/1502.01852}.
+He, Kaiming, et al. ``Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification.'' \textit{arXiv}, 6 Feb. 2015, \url{https://arxiv.org/abs/1502.01852}.
 \par\bigskip
-
 \noindent\hangindent=0.5in\hangafter=1
-``Higgs Boson Machine Learning Challenge.'' \textit{Kaggle}, 2014, \url{www.kaggle.com/c/higgs-boson}.
+``Higgs Boson Machine Learning Challenge.'' \textit{Kaggle}, 2014, \url{https://www.kaggle.com/c/higgs-boson}.
 \par\bigskip
-
 \noindent\hangindent=0.5in\hangafter=1
-Nair, Vinod, and Geoffrey E. Hinton. ``Rectified Linear Units Improve Restricted Boltzmann Machines.'' \textit{Proceedings of the 27th International Conference on Machine Learning}, 2010, \url{www.cs.toronto.edu/~fritz/absps/reluICML.pdf}.
+Nair, Vinod, and Geoffrey E. Hinton. ``Rectified Linear Units Improve Restricted Boltzmann Machines.'' \textit{Proceedings of the 27th International Conference on Machine Learning}, 2010, \url{https://www.cs.toronto.edu/~fritz/absps/reluICML.pdf}.
 \par\bigskip
-
 \noindent\hangindent=0.5in\hangafter=1
-Ng, Andrew. ``Neural Networks and Deep Learning.'' \textit{Coursera}, DeepLearning.AI, \url{www.coursera.org/learn/neural-networks-deep-learning}.
+Ng, Andrew. ``Neural Networks and Deep Learning.'' \textit{Coursera}, DeepLearning.AI, \url{https://www.coursera.org/learn/neural-networks-deep-learning}.
 \par\bigskip
-
 \noindent\hangindent=0.5in\hangafter=1
-TensorFlow Developers. ``TensorFlow Core.'' \textit{TensorFlow}, \url{www.tensorflow.org}.
+TensorFlow Developers. ``TensorFlow Core.'' \textit{TensorFlow}, \url{https://www.tensorflow.org}.
+\par\bigskip
+\noindent\hangindent=0.5in\hangafter=1
+Kelkar, Pratham. ``Neural-Network-from-Scratch.'' \textit{GitHub}, 2026, \url{https://www.github.com/prathamkelkar/Neural-Network-from-Scratch}.
+
+\pagebreak
+
+\section{Appendix}
+\begin{lstlisting}[caption={Preprocessing the Higgs data using preprocess\_data\_higgs.py}]
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+
+def preprocess_data():
+
+    data = pd.read_csv("training/training.csv")
+    print(data.shape)
+    print(data.columns.tolist())
+    print(data["Label"].value_counts(normalize=True))
+
+    # Convert label to binary
+    Y = (data["Label"] == "s").astype(int).values
+
+    # Drop non-feature columns
+    drop_cols = ["EventId", "Label", "Weight"]
+    feature_cols = [c for c in data.columns if c not in drop_cols]
+
+    X = data[feature_cols].values
+
+    X_clean = X.copy()
+    for col_idx in range(X.shape[1]):
+        col = X_clean[:, col_idx]
+        missing_mask = col == -999.0
+        if missing_mask.sum() > 0:
+            valid_median = np.median(col[~missing_mask])
+            col[missing_mask] = valid_median
+
+    X_train_raw, X_test_raw, Y_train_raw, Y_test_raw = train_test_split(
+        X_clean, Y, test_size=0.2, random_state=42, stratify=Y
+    )
+
+    X_train = X_train_raw.T
+    X_test = X_test_raw.T
+    Y_train = Y_train_raw.reshape(1, -1)
+    Y_test = Y_test_raw.reshape(1, -1)
+
+    mean = X_train.mean(axis=1, keepdims=True)
+    std = X_train.std(axis=1, keepdims=True)
+
+    X_train = (X_train - mean) / std
+    X_test = (X_test - mean) / std
+
+    return X_train, Y_train, X_test, Y_test
+
+\end{lstlisting}
+\pagebreak
+\begin{lstlisting}[caption={Neural network functions - NN\_helper\_functions.py}]
+import cupy as np
+import copy
+
+def sigmoid(Z):
+    """
+    A function to implement the sigmoid activation on a numpy ndarray Z
+
+    Arguments:
+    Z -- a numpy array of any shape
+
+    Returns:
+    A -- output of the sigmoid activation on Z -> it has the same shape as Z
+    cache -- returns Z in the form of cache for use during backpropagation
+    """
+
+    A = 1 / (1 + np.exp(-Z))
+    cache = Z
+
+    return A, cache
+
+def relu(Z):
+    """
+    A function to implement the ReLU activation on a numpy ndarray Z
+
+    Arguments:
+    Z -- output of the linear layer of a neuron
+
+    Returns:
+    A -- output of the ReLU activation on Z -> it has the same shape as Z
+    cache -- returns Z in the form of cache for use during backpropagation
+    """
+    
+    A = np.maximum(0, Z)
+    cache = Z
+
+    return A, cache
+
+def relu_backward(dA, cache):
+    """
+    A function to implement the backpropagation for a relu neuron.
+
+    Arguments:
+    dA -- post-activation gradient
+    cache -- 'Z' computed before, for implementation backpropagation
+
+    Returns:
+    dZ -- Gradient of the cost with respect to Z
+    """
+
+    Z = cache
+    # initializing dZ to a numpy array with values of dA as the ReLU function is linear
+    dZ = np.array(dA, copy=True)
+
+    # Setting the parts of dZ as 0 where Z is also 0
+    dZ[Z <= 0] = 0
+
+    return dZ
+
+def sigmoid_backward(dA, cache):
+    """
+    A function to implement the backpropagation for a sigmoid neuron.
+
+    Arguments:
+    dA -- post-activation gradient
+    cache -- 'Z' computed before, for implementation backpropagation
+
+    Returns:
+    dZ -- Gradient of the cost with respect to Z
+    """
+
+    Z = cache
+    
+    s = 1 / (1 + np.exp(-Z))
+    dZ = dA * s * (1-s)
+
+    return dZ
+
+def initialize_parameters(layer_dims):
+    """
+    A function to initialize all the parameters (w and b numpy arrays) before training.
+
+    Arguments:
+    layer_dims -- python list containing the number of neurons of each layer in the neural network
+
+    Returns:
+    parameters -- python dictionary coontaining parameters "W1", "b1", "W2", "b2", ... "WL", "bL":
+                    Wl -- matrix containing weights
+                    bl -- bias vector
+
+    """
+    
+    parameters = {}
+    # extracting number of layers in the neural network
+    L = len(layer_dims)
+
+    for l in range(1, L):
+        parameters['W' + str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1]) * np.sqrt(2 / layer_dims[l-1])
+        parameters['b' + str(l)] = np.zeros((layer_dims[l], 1))
+    
+    return parameters
+
+def linear_forward(A, W, b):
+    """
+    A function to apply the linear function to a layer during forward propagation.
+
+    Arguments:
+    A -- activation matrix from previous layer
+    W -- weight matrix of the current layer
+    b -- bias vector of the current layer
+
+    Returns:
+    Z -- the input that goes into the activation function
+    cache -- tuple containing 'A', 'W', 'b', stored as cache for backpropagation computation
+
+    """
+
+    Z = np.dot(W, A) + b
+
+    cache = (A, W, b)
+    
+    return Z, cache
+
+def linear_activation_forward(A_prev, W, b, activation):
+    """
+    A function to implement the forward propagation for a layer
+
+    Arguments:
+    A_prev -- activation matrix from previous layer
+    W -- weight matrix of current layer
+    b -- bias vector of current layer
+
+    Returns:
+    A -- the output of the activation function
+    cache -- tuple containing ((Z, ),( A, W, b)), stored as cache for backpropagation computation
+    """
+
+    Z, linear_cache = linear_forward(A_prev, W, b)
+
+    if activation == "sigmoid":
+        A, activation_cache = sigmoid(Z)
+
+    elif activation == "relu":
+        A, activation_cache = relu(Z)
+    
+    cache = (linear_cache, activation_cache)
+
+    return A, cache
+
+def model_forward(X, parameters):
+    """
+    A function to implement the forward propagation for all layers of a neural network
+
+    Arguments:
+    A_prev -- activation matrix from previous layer
+    W -- weight matrix of current layer
+    b -- bias vector of current layer
+
+    Returns:
+    A -- the output of the activation function
+    cache -- tuple containing (( A, W, b), (Z, )), stored as cache for backpropagation computation
+    """
+
+    caches = []
+    A = X
+    # extracting the number of layers in the neural network
+    L = len(parameters) // 2
+
+    for l in range(1, L):
+        A_prev = A
+        A, cache = linear_activation_forward(A_prev, parameters['W' + str(l)], parameters['b' + str(l)], "relu")
+        caches.append(cache)
+    
+    AL, cache = linear_activation_forward(A, parameters['W' + str(L)], parameters['b' + str(L)], "sigmoid")
+    caches.append(cache)
+
+    return AL, caches
+
+def has_converged(costs, window=5, threshold=0.001):
+    """
+    A function to check whether the cost computation has converged.
+
+    Arguments:
+    costs -- log of costs after each iteration
+    window -- the size of the window of iterations for which convergence needs to be checked
+    threshold -- the percentage change in the cost below which convergence can be declared
+
+    Returns:
+    True/False -- depending on whether the function has converged
+    """
+
+    if len(costs) < window + 1:
+        return False
+    
+    recent = costs[-window:]
+    relative_changes = [abs(recent[i] - recent[i-1])/abs(recent[i-1]) for i in range(1, len(recent))]
+
+    return max(relative_changes) < threshold
+
+def compute_cost(AL, Y):
+    """
+    A function to compute the cost of prediction while training.
+
+    Arguments:
+    AL -- probability vector corresponding to the predictions made
+    Y -- true label vector for the data
+
+    Returns:
+    cost -- cross-entropy cost
+    """
+
+    m = Y.shape[1]
+    epsilon = 1e-8
+    AL = np.clip(AL, epsilon, 1 - epsilon)
+    cost = -1/m * (np.dot(Y, np.log(AL).T) + np.dot(1-Y, np.log(1-AL).T))
+    cost = np.squeeze(cost)
+    return cost
+
+def linear_backward(dZ, cache):
+    """
+    A function to implement the linear part of backward propagation for a layer.
+
+    Arguments:
+    dZ -- gradient of the cost with respect to Z (output of the linear part of forward propagation)
+    cache -- tuple containing (A_prev, W, b) coming from the forward propagation of the current layer
+
+    Returns:
+    dA_prev -- gradient of the cost with respect to activation (A) of the previous layer
+    dW -- gradient of the cost with respect to W of the current layer
+    db -- gradient of the cost with respect to b of the current layer
+    """
+
+    A_prev, W, b = cache
+    m = A_prev.shape[1]
+
+    dW = 1/m * np.dot(dZ, A_prev.T)
+
+    db = 1/m * np.sum(dZ, axis=1, keepdims=True)
+
+    dA_prev = np.dot(W.T, dZ)
+
+    return dA_prev, dW, db
+
+def linear_activation_backward(dA, cache, activation):
+    """
+    A function to implement the backward propagation for a single layer.
+
+    Arguments:
+    dA - post-activation gradient for current layer
+    cache -- a tuple of values ((A, W, b), (Z, ))
+    activation -- the type of activation to be used for the current layer
+
+    Returns:
+    dA_prev - gradient of the cost with respect to the activation of the previous layer
+    dW -- gradient of the cost with respect to W of the current layer
+    db -- gradient of the cost with respect to b of the current layer
+    """
+
+    linear_cache, activation_cache = cache
+
+    if activation == "relu":
+        dZ = relu_backward(dA, activation_cache)
+    
+    elif activation == "sigmoid":
+        dZ = sigmoid_backward(dA, activation_cache)
+    
+    dA_prev, dW, db = linear_backward(dZ, linear_cache)
+
+    return dA_prev, dW, db
+
+def model_backward(AL, Y, caches):
+    """
+    A function to implement the backward propagation for all the layers of the neural network.
+
+    Arguments:
+    AL -- the probabilty vector of the predictions the network has made
+    Y -- true label vector of the data
+    caches -- python list containing ((A, W, b), (Z, )) of every layer of the neural network
+
+    Returns:
+    grads -- A dictionary with the gradients dA, dW, db for all layers of the neural network
+    """
+
+    grads = {}
+    L = len(caches)
+    m = AL.shape[1]
+    Y = Y.reshape(AL.shape)
+
+    dAL = -(np.divide(Y, AL) - np.divide(1-Y, 1-AL))
+
+    current_cache = caches[L-1]
+    dA_prev_temp, dW_temp, db_temp = linear_activation_backward(dAL, current_cache, "sigmoid")
+    grads["dA" + str(L-1)] = dA_prev_temp
+    grads["dW" + str(L)] = dW_temp
+    grads["db" + str(L)] = db_temp
+
+    for l in reversed(range(L-1)):
+
+        current_cache = caches[l]
+        dA_prev_temp, dW_temp, db_temp = linear_activation_backward(grads["dA" + str(l+1)], current_cache, "relu")
+        grads["dA" + str(l)] = dA_prev_temp
+        grads["dW" + str(l+1)] = dW_temp
+        grads["db" + str(l+1)] = db_temp
+    
+    return grads
+
+def update_parameters(params, grads, learning_rate):
+    """
+    A function to update parameters using gradient descent
+
+    Arguments:
+    params -- dictionary containing the parameters W,b for all layers of the neural network
+    grads -- A dictionary with the gradients dA, dW, db for all layers of the neural network
+
+    Returns:
+    parameters -- dictionary containing updated parameters
+    """
+
+    parameters = copy.deepcopy(params)
+    L = len(parameters) // 2
+
+    for l in range(L):
+        parameters['W' + str(l+1)] = parameters["W" + str(l+1)] - learning_rate * grads["dW" + str(l+1)]
+        parameters["b" + str(l+1)] = parameters['b' + str(l+1)] - learning_rate * grads['db' + str(l+1)]
+
+    return parameters
+
+def get_mini_batches(X, Y, batch_size=256, seed=0):
+    """
+    A function to separate the data into mini batches depending on the batch size.
+
+    Arguments:
+    X -- input features of 'm' training examples
+    Y -- labels of 'm' training examples
+    batch_size -- number of batches that the data is to be divided into
+    seed -- used as input to generate shuffled batches with each iteration
+
+    Returns:
+    mini_batches - python list of tuples containing each X and Y batch -> (X_batch, Y_batch)
+    """
+    
+    np.random.seed(seed)
+    m = X.shape[1]
+    mini_batches = []
+
+    permutation = list(np.random.permutation(m))
+    X_shuffled = X[:, permutation]
+    Y_shuffled = Y[:, permutation]
+
+    num_complete_batches = m // batch_size
+
+    for i in range(num_complete_batches):
+        X_batch = X_shuffled[:, (i) * batch_size: (i+1) * batch_size]
+        Y_batch = Y_shuffled[:, (i) * batch_size: (i+1) * batch_size]
+        mini_batches.append((X_batch, Y_batch))
+
+    if m % batch_size != 0:
+        X_batch = X_shuffled[:, num_complete_batches * batch_size:]
+        Y_batch = Y_shuffled[:, num_complete_batches * batch_size:]
+        mini_batches.append((X_batch, Y_batch))
+    
+    return mini_batches
+
+def run_model(X, Y, layers_dims, learning_rate=0.075, num_iterations = 3000, print_cost=False,
+              check_convergence=False, convergence_window=5, convergence_threshold=0.001):
+    
+    """
+    A function to run the neural network model.
+
+    Arguments:
+    X -- input features of 'm' training examples
+    Y -- labels of 'm' training examples
+    layers_dims -- list of the number of neurons in each layer.
+    learning_rate -- rate at which gradient descent is executed
+    num_iterations -- number of iterations that the model has to run for
+    print_cost -- boolean variable to toggle whether to print the cost after each 100th iteration
+    check-convergence -- boolean variable to toggle whether to check for convergence while running
+    convergence_window -- the size of the window of iterations for which convergence needs to be checked
+    convergence_threshold -- the percentage change in the cost below which convergence can be declared
+
+    Returns:
+    parameters -- dictionary of final weight and bias matrices for each layer of the neural network after training finishes
+    costs -- list of cost values logged after each 100th iteration
+    """
+
+    costs = []
+
+    parameters = initialize_parameters(layers_dims)
+
+    for i in range(0, num_iterations):
+
+        AL, caches = model_forward(X, parameters)
+        cost = compute_cost(AL, Y)
+        grads = model_backward(AL, Y, caches)
+        parameters = update_parameters(parameters, grads, learning_rate)
+
+        if print_cost and (i % 100 == 0 or i == num_iterations - 1):
+            print("Cost after iteration {}: {}".format(i, np.squeeze(cost)))
+        if i % 100 == 0:
+            costs.append(cost)
+        
+        if check_convergence and i % 100 == 0:
+            if has_converged(costs, window=convergence_window, threshold=convergence_threshold):
+                print(f"Converged at iteration {i} (relative change < {convergence_threshold})")
+                break
+    
+    return parameters, costs
+
+def run_model_epochs(X, Y, layers_dims, learning_rate=0.075, num_epochs = 100, batch_size=256, print_cost=False,
+              check_convergence=False, convergence_window=5, convergence_threshold=0.001):
+    
+    """
+    A function to run the neural network model with the mini-batching.
+
+    Arguments:
+    X -- input features of 'm' training examples
+    Y -- labels of 'm' training examples
+    layers_dims -- list of the number of neurons in each layer.
+    learning_rate -- rate at which gradient descent is executed
+    num_epochs -- number of iterations for which the model has to run
+    batch_size -- number of batches that the data is to be divided into
+    print_cost -- boolean variable to toggle whether to print the cost after each 100th iteration
+    check-convergence -- boolean variable to toggle whether to check for convergence while running
+    convergence_window -- the size of the window of iterations for which convergence needs to be checked
+    convergence_threshold -- the percentage change in the cost below which convergence can be declared
+
+    Returns:
+    parameters -- dictionary of final weight and bias matrices for each layer of the neural network after training finishes
+    costs -- list of cost values logged after each 100th iteration
+    """
+    
+    costs = []
+
+    parameters = initialize_parameters(layers_dims)
+    
+    for i in range(num_epochs):
+
+        mini_batches = get_mini_batches(X, Y, batch_size, seed=i)
+        epoch_cost = 0
+
+        for X_batch, Y_batch in mini_batches:
+            AL, caches = model_forward(X_batch, parameters)
+
+            batch_cost = compute_cost(AL, Y_batch)
+
+            grads = model_backward(AL, Y_batch, caches)
+            parameters = update_parameters(parameters, grads, learning_rate)
+
+            epoch_cost += batch_cost * X_batch.shape[1] / X.shape[1]
+        
+        if print_cost and (i % 10 == 0 or i == num_epochs - 1):
+            print("Cost after iteration {}: {}".format(i, np.squeeze(epoch_cost)))
+        if i % 10 == 0:
+            costs.append(epoch_cost)
+        
+        if check_convergence and i % 10 == 0:
+            if has_converged(costs, window=convergence_window, threshold=convergence_threshold):
+                print(f"Converged at iteration {i} (relative change < {convergence_threshold})")
+                break
+    
+    return parameters, costs
+
+def predict(X, y, parameters):
+    """
+    A function to run the neural network model.
+
+    Arguments:
+    X -- input features of 'm' training examples
+    Y -- labels of 'm' training examples
+    parameters -- dictionary of final weight and bias matrices for each layer of the neural network after training finishes
+
+    Returns:
+    p -- the probability matrix of predictions made using the model
+    np.sum((p==y)/m) -- the accuracy of the predictions of the model
+    """
+
+    m = X.shape[1]
+    n = len(parameters) // 2
+    p = np.zeros((1, m))
+
+    probas, caches = model_forward(X, parameters)
+
+    for i in range(0, probas.shape[1]):
+        if probas[0, i] > 0.5:
+            p[0, i] = 1
+        else:
+            p[0, i] = 0
+    
+    print("Accuracy: " + str(np.sum((p==y)/m)))
+    return p, np.sum((p==y)/m)
+
+\end{lstlisting}
 
 \end{document}
